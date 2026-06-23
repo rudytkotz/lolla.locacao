@@ -456,6 +456,13 @@
     <span class="cart-bubble" id="cartBubble">Item adicionado!</span>
   </button>
 
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()" aria-label="Fechar">✕</button>
+    <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()" />
+    <p class="lightbox-caption" id="lightboxCaption"></p>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

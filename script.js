@@ -1,3 +1,33 @@
+// ===== LIGHTBOX =====
+function openLightbox(src, caption) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxImg').alt = caption;
+  document.getElementById('lightboxCaption').textContent = caption;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Fecha com tecla Esc
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// Abre lightbox ao clicar em qualquer imagem de produto
+document.addEventListener('click', e => {
+  const img = e.target.closest('.product-img img');
+  if (img) {
+    const card = img.closest('.product-card');
+    const caption = card ? card.querySelector('h3')?.textContent : '';
+    openLightbox(img.src, caption);
+  }
+});
+
 // ===== CARRINHO DE ORÇAMENTO =====
 let cart = [];
 
