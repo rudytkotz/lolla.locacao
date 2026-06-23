@@ -32,6 +32,12 @@
           <span></span><span></span><span></span>
         </button>
       </nav>
+
+      <!-- Botão carrinho no header -->
+      <button class="cart-header-btn" onclick="openCart()" aria-label="Abrir carrinho de orçamento">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+      </button>
     </div>
     <div class="mobile-menu" id="mobileMenu">
       <a href="#catalogo" onclick="closeMobileMenu()">Catálogo</a>
@@ -48,7 +54,7 @@
       <p class="hero-sub">Mesas, painéis, kits pegue e monte e tudo para deixar sua festa inesquecível.</p>
       <div class="hero-btns">
         <a href="#catalogo" class="btn-primary">Ver Catálogo</a>
-        <a href="https://wa.me/5524974050674" target="_blank" class="btn-secondary">Solicitar Orçamento</a>
+        <a href="https://wa.me/5524974050674" target="_blank" class="btn-secondary">Falar pelo WhatsApp</a>
       </div>
     </div>
     <div class="hero-decoration">
@@ -63,7 +69,7 @@
     <div class="container">
       <div class="section-header">
         <h2>Nosso Catálogo</h2>
-        <p>Escolha os itens que combinam com o seu evento</p>
+        <p>Adicione os itens desejados ao carrinho e envie seu orçamento de uma vez</p>
       </div>
 
       <div class="filter-bar">
@@ -85,7 +91,14 @@
             <p>Mesa bistrô com tampo redondo, perfeita para lounges e coquetéis.</p>
             <div class="product-footer">
               <span class="price">R$ 45<small>/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse na Mesa Bistrô Redonda. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Mesa Bistrô Redonda',45,'/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -98,7 +111,14 @@
             <p>Mesa retangular com toalha inclusa, ideal para 6 pessoas.</p>
             <div class="product-footer">
               <span class="price">R$ 120<small>/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse na Mesa Posta 6 Lugares. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Mesa Posta 6 Lugares',120,'/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -111,7 +131,14 @@
             <p>Cadeira Tiffany transparente, elegante para qualquer tema de festa.</p>
             <div class="product-footer">
               <span class="price">R$ 12<small>/un/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse nas Cadeiras Tiffany. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Cadeira Tiffany',12,'/un/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -125,7 +152,14 @@
             <p>Painel com flores artificiais 2x2m, ideal para fotos e cenário de festa.</p>
             <div class="product-footer">
               <span class="price">R$ 180<small>/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Painel Florido. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Painel Florido',180,'/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -138,7 +172,14 @@
             <p>Painel com estrutura para balões coloridos, montado no local do evento.</p>
             <div class="product-footer">
               <span class="price">R$ 150<small>/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Painel de Balões. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Painel de Balões',150,'/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -151,7 +192,14 @@
             <p>Painel ripado em madeira clara, estilo rústico chic para qualquer tema.</p>
             <div class="product-footer">
               <span class="price">R$ 200<small>/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Painel Ripado. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Painel Ripado',200,'/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -165,7 +213,14 @@
             <p>Toalha, caminho de mesa, porta-guardanapo e vela. Basta montar!</p>
             <div class="product-footer">
               <span class="price">R$ 85<small>/kit</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Kit Mesa Posta Completa. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Kit Mesa Posta Completa',85,'/kit')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -178,7 +233,14 @@
             <p>Mesinha, toalha, faqueiro decorativo e arranjo floral. Pronto para usar!</p>
             <div class="product-footer">
               <span class="price">R$ 110<small>/kit</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Kit Cantinho do Bolo. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Kit Cantinho do Bolo',110,'/kit')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -191,7 +253,14 @@
             <p>Tapete, puff, mesinha de centro e lanternas. Crie um cantinho aconchegante.</p>
             <div class="product-footer">
               <span class="price">R$ 220<small>/kit</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Kit Lounge Externo. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Kit Lounge Externo',220,'/kit')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -205,7 +274,14 @@
             <p>Arranjo com balões coloridos ou temáticos, entregue inflado no local.</p>
             <div class="product-footer">
               <span class="price">R$ 60<small>/arranjo</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Arranjo de Balões. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Arranjo de Balões',60,'/arranjo')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -218,7 +294,14 @@
             <p>Coluna de balões 1,5m de altura, ideal para entrada ou palco do evento.</p>
             <div class="product-footer">
               <span class="price">R$ 90<small>/unidade</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse na Coluna de Balões. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Coluna de Balões',90,'/unidade')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -231,7 +314,14 @@
             <p>Varal de luzes LED 5m, cria ambiente intimista e romântico para o evento.</p>
             <div class="product-footer">
               <span class="price">R$ 35<small>/diária</small></span>
-              <a href="https://wa.me/5524974050674?text=Olá! Tenho interesse no Varal de Luzes. Pode me passar mais informações?" target="_blank" class="btn-card">Orçamento</a>
+              <div class="card-add-row">
+                <div class="card-qty">
+                  <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                  <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                  <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                </div>
+                <button class="btn-card" onclick="addToCartFromCard(this,'Varal de Luzes',35,'/diária')">Adicionar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -331,10 +421,40 @@
     </div>
   </footer>
 
-  <!-- BOTÃO FLUTUANTE WHATSAPP -->
-  <a href="https://wa.me/5524974050674?text=Olá! Vim pelo site e gostaria de fazer um orçamento." target="_blank" class="whatsapp-float" aria-label="Fale pelo WhatsApp">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-  </a>
+  <!-- CARRINHO PAINEL (slide-in) -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-panel" id="cartPanel" aria-label="Carrinho de orçamento">
+    <div class="cart-header">
+      <h2>🛒 Meu Orçamento</h2>
+      <button class="cart-close" onclick="closeCart()" aria-label="Fechar carrinho">✕</button>
+    </div>
+
+    <div class="cart-empty" id="cartEmpty">
+      <span>🛍️</span>
+      <p>Seu carrinho está vazio.</p>
+      <small>Adicione itens do catálogo para montar seu orçamento.</small>
+    </div>
+
+    <div class="cart-items" id="cartItems" style="display:none"></div>
+
+    <div class="cart-footer" id="cartFooter" style="display:none">
+      <div class="cart-total-row">
+        <span>Total estimado</span>
+        <strong id="cartTotal">R$ 0,00</strong>
+      </div>
+      <small class="cart-obs">* Valores sujeitos a confirmação de disponibilidade e data.</small>
+      <button class="cart-send-btn" onclick="sendWhatsApp()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar pelo WhatsApp
+      </button>
+    </div>
+  </aside>
+
+  <!-- FAB carrinho flutuante -->
+  <button class="cart-fab" id="cartFab" onclick="openCart()" aria-label="Abrir carrinho">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <span class="cart-bubble" id="cartBubble">Item adicionado!</span>
+  </button>
 
   <script src="script.js"></script>
 </body>
