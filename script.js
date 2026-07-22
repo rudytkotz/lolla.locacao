@@ -1,19 +1,27 @@
-// ===== DADOS DOS PRODUTOS =====
-const defaultProducts = [
-  { id: 1, category: "mesas", emoji: "🪑", image: "", name: "Mesa Bistrô Redonda", description: "Mesa bistrô com tampo redondo, perfeita para lounges e coquetéis.", price: 45, unit: "/diária", stock: null },
-  { id: 2, category: "mesas", emoji: "🪑", image: "", name: "Mesa Posta 6 Lugares", description: "Mesa retangular com toalha inclusa, ideal para 6 pessoas.", price: 120, unit: "/diária", stock: null },
-  { id: 3, category: "mesas", emoji: "🪑", image: "", name: "Cadeira Tiffany", description: "Cadeira Tiffany transparente, elegante para qualquer tema de festa.", price: 12, unit: "/un/diária", stock: null },
-  { id: 4, category: "paineis", emoji: "🖼️", image: "", name: "Painel Florido", description: "Painel com flores artificiais 2x2m, ideal para fotos e cenário de festa.", price: 180, unit: "/diária", stock: null },
-  { id: 5, category: "paineis", emoji: "🖼️", image: "", name: "Painel de Balões", description: "Painel com estrutura para balões coloridos, montado no local do evento.", price: 150, unit: "/diária", stock: null },
-  { id: 6, category: "paineis", emoji: "🖼️", image: "", name: "Painel Ripado", description: "Painel ripado em madeira clara, estilo rústico chic para qualquer tema.", price: 200, unit: "/diária", stock: null },
-  { id: 7, category: "pegue-e-monte", emoji: "", image: "fotos/kit1.jpg", name: "Kit Mesa Posta Completa", description: "Toalha, caminho de mesa, porta-guardanapo e vela. Basta montar!", price: 85, unit: "/kit", stock: null },
-  { id: 8, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Cantinho do Bolo", description: "Mesinha, toalha, faqueiro decorativo e arranjo floral. Pronto para usar!", price: 110, unit: "/kit", stock: null },
-  { id: 9, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Lounge Externo", description: "Tapete, puff, mesinha de centro e lanternas. Crie um cantinho aconchegante.", price: 220, unit: "/kit", stock: null },
-  { id: 10, category: "decoracao", emoji: "🎊", image: "", name: "Arranjo de Balões", description: "Arranjo com balões coloridos ou temáticos, entregue inflado no local.", price: 60, unit: "/arranjo", stock: null },
-  { id: 11, category: "decoracao", emoji: "🎊", image: "", name: "Coluna de Balões", description: "Coluna de balões 1,5m de altura, ideal para entrada ou palco do evento.", price: 90, unit: "/unidade", stock: null },
-  { id: 12, category: "decoracao", emoji: "🎊", image: "", name: "Varal de Luzes", description: "Varal de luzes LED 5m, cria ambiente intimista e romântico para o evento.", price: 35, unit: "/diária", stock: null }
-];
+// ===== SUPABASE =====
+const SUPABASE_URL = 'https://bgeybgxyiwektzmgkcdk.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnZXliZ3h5aXdla3R6bWdrY2RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NTE0NjUsImV4cCI6MjEwMDMyNzQ2NX0.7vrmRFuA-QLIohCFbthfrkwiioa79vQ0_sa8Vz4Eeyw';
 
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ===== CATEGORIAS =====
 const categoryLabels = {
   "mesas": "Mesas & Cadeiras",
   "paineis": "Painéis",
@@ -21,19 +29,25 @@ const categoryLabels = {
   "decoracao": "Decoração"
 };
 
-function getProducts() {
-  try {
-    const saved = localStorage.getItem('lolla_products');
-    return saved ? JSON.parse(saved) : defaultProducts;
-  } catch(e) {
-    return defaultProducts;
-  }
-}
-
-function renderProducts() {
-  const products = getProducts();
+// ===== RENDER PRODUTOS =====
+async function renderProducts() {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
+
+  grid.innerHTML = `<div class="loading-products">Carregando catálogo...</div>`;
+
+  let products = [];
+  try {
+    products = await sbFetch('produtos?select=*&order=ordem.asc,id.asc');
+  } catch(e) {
+    grid.innerHTML = `<p style="color:#c0392b;grid-column:1/-1;text-align:center">Erro ao carregar produtos. Tente recarregar a página.</p>`;
+    return;
+  }
+
+  if (!products || products.length === 0) {
+    grid.innerHTML = `<p style="color:#6b6b6b;grid-column:1/-1;text-align:center">Nenhum produto disponível no momento.</p>`;
+    return;
+  }
 
   grid.innerHTML = products.map(p => {
     const imgHtml = p.image
@@ -41,9 +55,9 @@ function renderProducts() {
       : `<div class="product-img emoji">${p.emoji || '📦'}</div>`;
 
     const label = categoryLabels[p.category] || p.category;
-    const unitEscaped = p.unit.replace(/'/g, "\\'");
-    const nameEscaped = p.name.replace(/'/g, "\\'");
-    const stock = (p.stock !== null && p.stock !== undefined && p.stock !== '') ? parseInt(p.stock) : null;
+    const unitEscaped = (p.unit || '').replace(/'/g, "\\'");
+    const nameEscaped = (p.name || '').replace(/'/g, "\\'");
+    const stock = (p.stock !== null && p.stock !== undefined) ? parseInt(p.stock) : null;
     const stockHtml = stock !== null
       ? `<span class="product-stock ${stock === 0 ? 'out' : ''}">${stock === 0 ? '⚠️ Indisponível' : `📦 ${stock} disponíve${stock === 1 ? 'l' : 'is'}`}</span>`
       : '';
@@ -55,7 +69,7 @@ function renderProducts() {
         <div class="product-info">
           <span class="product-tag">${label}</span>
           <h3>${p.name}</h3>
-          <p>${p.description}</p>
+          <p>${p.description || ''}</p>
           ${stockHtml}
           <div class="product-footer">
             <span class="price">R$ ${p.price}<small>${p.unit}</small></span>
@@ -79,7 +93,7 @@ function renderProducts() {
     card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
   });
 
-  // Reaplica animação de entrada
+  // Animação de entrada
   document.querySelectorAll('.product-card').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
@@ -103,12 +117,10 @@ function closeLightbox() {
   document.body.style.overflow = '';
 }
 
-// Fecha com tecla Esc
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeLightbox();
 });
 
-// Abre lightbox ao clicar em qualquer imagem de produto
 document.addEventListener('click', e => {
   const img = e.target.closest('.product-img img');
   if (img) {
@@ -121,49 +133,28 @@ document.addEventListener('click', e => {
 // ===== CARRINHO DE ORÇAMENTO =====
 let cart = [];
 
-// Seletor de quantidade no card: incrementa/decrementa o input ao lado do botão clicado
 function cardQty(btn, delta) {
   const wrapper = btn.closest('.card-qty');
   const input = wrapper.querySelector('.card-qty-input');
-  const newVal = Math.max(1, parseInt(input.value) + delta);
+  const max = parseInt(input.max) || 999;
+  const newVal = Math.min(max, Math.max(1, parseInt(input.value) + delta));
   input.value = newVal;
 }
 
-// Lê a quantidade do seletor do card e adiciona ao carrinho
 function addToCartFromCard(btn, name, price, unit) {
   const wrapper = btn.closest('.card-add-row');
   const input = wrapper.querySelector('.card-qty-input');
   const qty = Math.max(1, parseInt(input.value) || 1);
 
   const existing = cart.find(item => item.name === name);
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    cart.push({ name, price, unit, qty });
-  }
+  if (existing) existing.qty += qty;
+  else cart.push({ name, price, unit, qty });
 
-  // Feedback visual no botão
   btn.textContent = '✓ Adicionado!';
   btn.classList.add('added');
-  setTimeout(() => {
-    btn.textContent = 'Adicionar';
-    btn.classList.remove('added');
-  }, 1500);
+  setTimeout(() => { btn.textContent = 'Adicionar'; btn.classList.remove('added'); }, 1500);
 
-  // Reseta o seletor para 1
   input.value = 1;
-
-  updateCartUI();
-  showCartBubble(qty);
-}
-
-function addToCart(name, price, unit, qty = 1) {
-  const existing = cart.find(item => item.name === name);
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    cart.push({ name, price, unit, qty });
-  }
   updateCartUI();
   showCartBubble(qty);
 }
@@ -185,19 +176,15 @@ function updateCartUI() {
   const count = cart.reduce((acc, i) => acc + i.qty, 0);
   const total = cart.reduce((acc, i) => acc + i.qty * i.price, 0);
 
-  // Badge
   const badge = document.getElementById('cartBadge');
   badge.textContent = count;
   badge.style.display = count > 0 ? 'flex' : 'none';
 
-  // Botão flutuante
-  const fab = document.getElementById('cartFab');
-  fab.classList.toggle('has-items', count > 0);
+  document.getElementById('cartFab').classList.toggle('has-items', count > 0);
 
-  // Conteúdo do painel
-  const cartItems = document.getElementById('cartItems');
+  const cartItems  = document.getElementById('cartItems');
   const cartFooter = document.getElementById('cartFooter');
-  const cartEmpty = document.getElementById('cartEmpty');
+  const cartEmpty  = document.getElementById('cartEmpty');
 
   if (cart.length === 0) {
     cartEmpty.style.display = 'flex';
@@ -248,7 +235,6 @@ function closeCart() {
 
 function sendWhatsApp() {
   if (cart.length === 0) return;
-
   let msg = 'Olá! Gostaria de solicitar um orçamento pelos itens abaixo:\n\n';
   cart.forEach(item => {
     msg += `• ${item.name} — ${item.qty}x (R$ ${item.price.toFixed(2).replace('.', ',')} ${item.unit})\n`;
@@ -256,9 +242,7 @@ function sendWhatsApp() {
   const total = cart.reduce((acc, i) => acc + i.qty * i.price, 0);
   msg += `\n*Total estimado: R$ ${total.toFixed(2).replace('.', ',')}*`;
   msg += '\n\nAguardo confirmação de disponibilidade. Obrigado(a)!';
-
-  const url = `https://wa.me/5524974050674?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
+  window.open(`https://wa.me/5524974050674?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // ===== HEADER SCROLL =====
@@ -268,44 +252,33 @@ window.addEventListener('scroll', () => {
 });
 
 // ===== MENU MOBILE =====
-const hamburger = document.getElementById('hamburger');
-const mobileMenu = document.getElementById('mobileMenu');
-
-hamburger.addEventListener('click', () => {
-  mobileMenu.classList.toggle('open');
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('mobileMenu').classList.toggle('open');
 });
 
 function closeMobileMenu() {
-  mobileMenu.classList.remove('open');
+  document.getElementById('mobileMenu').classList.remove('open');
 }
 
-// ===== FILTRO DE PRODUTOS =====
-const filterBtns = document.querySelectorAll('.filter-btn');
-const productCards = document.querySelectorAll('.product-card');
-
-filterBtns.forEach(btn => {
+// ===== FILTRO =====
+document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const filter = btn.dataset.filter;
-    filterBtns.forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    productCards.forEach(card => {
-      if (filter === 'todos' || card.dataset.category === filter) {
-        card.classList.remove('hidden');
-      } else {
-        card.classList.add('hidden');
-      }
+    const filter = btn.dataset.filter;
+    document.querySelectorAll('.product-card').forEach(card => {
+      card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
     });
   });
 });
 
 // ===== SMOOTH SCROLL =====
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
+  anchor.addEventListener('click', function(e) {
     const target = document.querySelector(this.getAttribute('href'));
     if (target) {
       e.preventDefault();
-      const top = target.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top, behavior: 'smooth' });
+      window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
     }
   });
 });
@@ -320,10 +293,9 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1 });
 
-// Renderiza produtos dinamicamente
+// Inicializa
 renderProducts();
 
-// Animação para cards estáticos (sobre, contato)
 document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
   el.style.opacity = '0';
   el.style.transform = 'translateY(20px)';
@@ -331,5 +303,4 @@ document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
   observer.observe(el);
 });
 
-// Fecha painel ao clicar fora
 document.getElementById('cartOverlay').addEventListener('click', closeCart);

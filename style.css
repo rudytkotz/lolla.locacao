@@ -968,6 +968,15 @@ footer {
   transform: translateY(0);
 }
 
+.loading-products {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 0;
+  color: var(--text-light);
+  font-size: 0.95rem;
+  font-weight: 300;
+}
+
 .product-stock {
   font-size: 0.75rem;
   font-weight: 500;
