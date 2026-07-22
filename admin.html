@@ -72,6 +72,18 @@
     }
     .admin-toolbar h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--green-dark); }
 
+    /* ABAS */
+    .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--cream-dark); margin-bottom: 28px; }
+    .tab-btn {
+      padding: 10px 24px; border: none; background: none; font-family: 'Jost', sans-serif;
+      font-size: 0.9rem; font-weight: 500; color: var(--text-light); cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn:hover { color: var(--green); }
+    .tab-btn.active { color: var(--green-dark); border-bottom-color: var(--green-dark); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
     /* TABELA */
     .table-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     table { width: 100%; border-collapse: collapse; background: var(--white); font-size: 0.88rem; }
@@ -195,30 +207,60 @@
   </header>
 
   <div class="admin-body">
-    <div class="admin-toolbar">
-      <h2>Produtos do Catálogo</h2>
-      <button class="btn btn-primary" onclick="openNewModal()">+ Novo produto</button>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('produtos')">Produtos</button>
+      <button class="tab-btn" onclick="switchTab('categorias')">Categorias</button>
     </div>
 
-    <div class="table-wrap">
-      <table id="productsTable">
-        <thead>
-          <tr>
-            <th class="td-img">Foto</th>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Categoria</th>
-            <th>Preço R$</th>
-            <th>Unidade</th>
-            <th>Estoque</th>
-            <th>Ordem</th>
-            <th class="td-actions">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="productsBody">
-          <tr><td colspan="9" class="empty-state">Carregando...</td></tr>
-        </tbody>
-      </table>
+    <!-- ABA PRODUTOS -->
+    <div class="tab-pane active" id="tab-produtos">
+      <div class="admin-toolbar">
+        <h2>Produtos do Catálogo</h2>
+        <button class="btn btn-primary" onclick="openNewModal()">+ Novo produto</button>
+      </div>
+      <div class="table-wrap">
+        <table id="productsTable">
+          <thead>
+            <tr>
+              <th class="td-img">Foto</th>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Preço R$</th>
+              <th>Unidade</th>
+              <th>Estoque</th>
+              <th>Ordem</th>
+              <th class="td-actions">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody">
+            <tr><td colspan="9" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABA CATEGORIAS -->
+    <div class="tab-pane" id="tab-categorias">
+      <div class="admin-toolbar">
+        <h2>Categorias</h2>
+        <button class="btn btn-primary" onclick="openCatModal()">+ Nova categoria</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome (label)</th>
+              <th>Slug (identificador)</th>
+              <th>Ordem</th>
+              <th class="td-actions">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="catsBody">
+            <tr><td colspan="4" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -249,10 +291,7 @@
       <div class="form-group">
         <label>Categoria</label>
         <select id="mCategory">
-          <option value="mesas">Mesas & Cadeiras</option>
-          <option value="paineis">Painéis</option>
-          <option value="pegue-e-monte">Pegue & Monte</option>
-          <option value="decoracao">Decoração</option>
+          <option value="">Carregando...</option>
         </select>
       </div>
       <div class="form-group">
@@ -272,6 +311,30 @@
     <div class="modal-btns">
       <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" id="saveModalBtn" onclick="saveModal()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CATEGORIA -->
+<div class="modal-overlay" id="catModalOverlay">
+  <div class="modal">
+    <h2 id="catModalTitle">Nova Categoria</h2>
+    <div class="form-group">
+      <label>Nome exibido no site</label>
+      <input type="text" id="cLabel" placeholder="Ex: Mesas & Cadeiras" />
+    </div>
+    <div class="form-group">
+      <label>Slug (identificador interno, sem espaços)</label>
+      <input type="text" id="cSlug" placeholder="Ex: mesas" />
+      <small style="color:var(--text-light);font-size:0.75rem;margin-top:4px;display:block">Só letras minúsculas e hífens. Não altere após criar produtos nessa categoria.</small>
+    </div>
+    <div class="form-group">
+      <label>Ordem</label>
+      <input type="number" id="cOrdem" value="0" min="0" />
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeCatModal()">Cancelar</button>
+      <button class="btn btn-primary" id="saveCatBtn" onclick="saveCat()">Salvar</button>
     </div>
   </div>
 </div>
@@ -346,6 +409,8 @@ function doLogout() {
 async function showAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
+  // Carrega categorias primeiro para ter o select correto na tabela
+  try { cats = await sbFetch('categorias?select=*&order=ordem.asc,id.asc') || []; } catch(e) { cats = []; }
   await loadTable();
 }
 </script>
@@ -383,9 +448,9 @@ function renderTable(products) {
       <td><input class="editable" value="${escHtml(p.name)}" onblur="saveField(${p.id},'name',this.value)" /></td>
       <td><textarea class="editable" onblur="saveField(${p.id},'description',this.value)">${escHtml(p.description||'')}</textarea></td>
       <td>
-        <select class="editable" onchange="saveField(${p.id},'category',this.value)">
-          ${Object.entries(categoryLabels).map(([v,l]) =>
-            `<option value="${v}"${p.category===v?' selected':''}>${l}</option>`
+        <select class="editable" data-cat-select onchange="saveField(${p.id},'category',this.value)">
+          ${cats.map(c =>
+            `<option value="${c.slug}"${p.category===c.slug?' selected':''}>${escHtml(c.label)}</option>`
           ).join('')}
         </select>
       </td>
@@ -464,7 +529,9 @@ function openNewModal() {
   document.getElementById('mDesc').value = '';
   document.getElementById('mPrice').value = '';
   document.getElementById('mUnit').value = '/diária';
-  document.getElementById('mCategory').value = 'mesas';
+  // Popula select de categorias
+  const sel = document.getElementById('mCategory');
+  sel.innerHTML = cats.map(c => `<option value="${c.slug}">${escHtml(c.label)}</option>`).join('');
   document.getElementById('mStock').value = '';
   document.getElementById('mEmoji').value = '📦';
   document.getElementById('mImage').value = '';
@@ -538,6 +605,136 @@ function showToast(msg, isError = false) {
   t.classList.add('show');
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===== ABAS =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(name === 'produtos' ? 'produto' : 'categoria'))
+      b.classList.add('active');
+  });
+  if (name === 'categorias') loadCats();
+}
+
+// ===== CATEGORIAS =====
+let cats = []; // cache local das categorias
+
+async function loadCats() {
+  const tbody = document.getElementById('catsBody');
+  tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Carregando...</td></tr>`;
+  try {
+    cats = await sbFetch('categorias?select=*&order=ordem.asc,id.asc') || [];
+    renderCatsTable(cats);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color:var(--red)">Erro ao carregar.</td></tr>`;
+  }
+}
+
+function renderCatsTable(list) {
+  const tbody = document.getElementById('catsBody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nenhuma categoria. Clique em "+ Nova categoria".</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(c => `
+    <tr id="catrow-${c.id}">
+      <td><input class="editable" value="${escHtml(c.label)}" onblur="saveCatField(${c.id},'label',this.value)" /></td>
+      <td><code style="font-size:0.85rem;color:var(--green-dark)">${escHtml(c.slug)}</code></td>
+      <td><input class="editable" type="number" value="${c.ordem||0}" min="0" onblur="saveCatField(${c.id},'ordem',parseInt(this.value)||0)" style="width:60px" /></td>
+      <td class="td-actions">
+        <button class="btn btn-sm btn-danger" onclick="deleteCat(${c.id},'${escHtml(c.slug)}')">Excluir</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function saveCatField(id, field, value) {
+  try {
+    await sbFetch(`categorias?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ [field]: value }) });
+    showToast('✓ Salvo');
+    // Recarrega o select de categorias na aba produtos
+    await reloadCatSelect();
+  } catch(e) {
+    showToast('❌ Erro ao salvar', true);
+  }
+}
+
+async function deleteCat(id, slug) {
+  if (!confirm(`Excluir a categoria "${slug}"?\n\nOs produtos que usam esse slug ficarão sem categoria visível no site.`)) return;
+  try {
+    await sbFetch(`categorias?id=eq.${id}`, { method: 'DELETE', headers: { 'Prefer': 'return=minimal' } });
+    showToast('✓ Categoria excluída');
+    await loadCats();
+    await reloadCatSelect();
+  } catch(e) {
+    showToast('❌ Erro ao excluir', true);
+  }
+}
+
+// Modal nova categoria
+let editingCatId = null;
+
+function openCatModal() {
+  editingCatId = null;
+  document.getElementById('catModalTitle').textContent = 'Nova Categoria';
+  document.getElementById('cLabel').value = '';
+  document.getElementById('cSlug').value = '';
+  document.getElementById('cOrdem').value = cats.length + 1;
+  document.getElementById('catModalOverlay').classList.add('open');
+  document.getElementById('cLabel').focus();
+}
+
+function closeCatModal() {
+  document.getElementById('catModalOverlay').classList.remove('open');
+}
+
+// Auto-gera slug a partir do label
+document.getElementById('cLabel').addEventListener('input', function() {
+  const slug = this.value.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  document.getElementById('cSlug').value = slug;
+});
+
+async function saveCat() {
+  const label = document.getElementById('cLabel').value.trim();
+  const slug  = document.getElementById('cSlug').value.trim();
+  const ordem = parseInt(document.getElementById('cOrdem').value) || 0;
+  if (!label || !slug) { alert('Preencha nome e slug.'); return; }
+
+  const btn = document.getElementById('saveCatBtn');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    await sbFetch('categorias', { method: 'POST', body: JSON.stringify({ label, slug, ordem }) });
+    showToast('✓ Categoria criada');
+    closeCatModal();
+    await loadCats();
+    await reloadCatSelect();
+  } catch(e) {
+    showToast('❌ Erro: slug já existe ou dados inválidos', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar';
+  }
+}
+
+document.getElementById('catModalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('catModalOverlay')) closeCatModal();
+});
+
+// Recarrega o <select> de categorias na tabela de produtos
+async function reloadCatSelect() {
+  try {
+    cats = await sbFetch('categorias?select=*&order=ordem.asc,id.asc') || [];
+  } catch(e) { return; }
+  // Atualiza todos os selects de categoria já na tabela
+  document.querySelectorAll('[data-cat-select]').forEach(sel => {
+    const current = sel.value;
+    sel.innerHTML = cats.map(c =>
+      `<option value="${c.slug}"${c.slug===current?' selected':''}>${escHtml(c.label)}</option>`
+    ).join('');
+  });
 }
 
 // ===== INIT =====

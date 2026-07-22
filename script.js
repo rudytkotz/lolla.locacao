@@ -21,40 +21,67 @@ async function sbFetch(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-// ===== CATEGORIAS =====
-const categoryLabels = {
-  "mesas": "Mesas & Cadeiras",
-  "paineis": "Painéis",
-  "pegue-e-monte": "Pegue & Monte",
-  "decoracao": "Decoração"
-};
+// ===== INIT =====
+async function init() {
+  // Carrega categorias e produtos em paralelo
+  const [categorias, products] = await Promise.all([
+    sbFetch('categorias?select=*&order=ordem.asc,id.asc').catch(() => []),
+    sbFetch('produtos?select=*&order=ordem.asc,id.asc').catch(() => null)
+  ]);
+
+  renderFilterBar(categorias || []);
+  renderProducts(products || [], categorias || []);
+
+  document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    observer.observe(el);
+  });
+}
+
+// ===== FILTROS DINÂMICOS =====
+function renderFilterBar(categorias) {
+  const bar = document.querySelector('.filter-bar');
+  if (!bar) return;
+
+  bar.innerHTML = `<button class="filter-btn active" data-filter="todos">Todos</button>` +
+    categorias.map(c =>
+      `<button class="filter-btn" data-filter="${c.slug}">${c.label}</button>`
+    ).join('');
+
+  bar.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.product-card').forEach(card => {
+        card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
+      });
+    });
+  });
+}
 
 // ===== RENDER PRODUTOS =====
-async function renderProducts() {
+function renderProducts(products, categorias) {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
 
-  grid.innerHTML = `<div class="loading-products">Carregando catálogo...</div>`;
-
-  let products = [];
-  try {
-    products = await sbFetch('produtos?select=*&order=ordem.asc,id.asc');
-  } catch(e) {
-    grid.innerHTML = `<p style="color:#c0392b;grid-column:1/-1;text-align:center">Erro ao carregar produtos. Tente recarregar a página.</p>`;
-    return;
-  }
-
   if (!products || products.length === 0) {
-    grid.innerHTML = `<p style="color:#6b6b6b;grid-column:1/-1;text-align:center">Nenhum produto disponível no momento.</p>`;
+    grid.innerHTML = `<p style="color:#6b6b6b;grid-column:1/-1;text-align:center;padding:60px 0">Nenhum produto disponível no momento.</p>`;
     return;
   }
+
+  // Monta mapa slug -> label a partir das categorias do banco
+  const catMap = {};
+  (categorias || []).forEach(c => { catMap[c.slug] = c.label; });
 
   grid.innerHTML = products.map(p => {
     const imgHtml = p.image
       ? `<div class="product-img"><img src="${p.image}" alt="${p.name}" /></div>`
       : `<div class="product-img emoji">${p.emoji || '📦'}</div>`;
 
-    const label = categoryLabels[p.category] || p.category;
+    const label = catMap[p.category] || p.category;
     const unitEscaped = (p.unit || '').replace(/'/g, "\\'");
     const nameEscaped = (p.name || '').replace(/'/g, "\\'");
     const stock = (p.stock !== null && p.stock !== undefined) ? parseInt(p.stock) : null;
@@ -86,14 +113,6 @@ async function renderProducts() {
       </div>`;
   }).join('');
 
-  // Reaplica filtro ativo
-  const activeFilter = document.querySelector('.filter-btn.active');
-  const filter = activeFilter ? activeFilter.dataset.filter : 'todos';
-  document.querySelectorAll('.product-card').forEach(card => {
-    card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
-  });
-
-  // Animação de entrada
   document.querySelectorAll('.product-card').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
@@ -294,13 +313,6 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 // Inicializa
-renderProducts();
-
-document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(20px)';
-  el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-  observer.observe(el);
-});
+init();
 
 document.getElementById('cartOverlay').addEventListener('click', closeCart);
