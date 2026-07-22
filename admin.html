@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Lolla Locação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #4a6741; --green-dark: #354d2e; --cream: #f5f0e8;
+      --cream-dark: #ede7d9; --white: #fff; --text: #2c2c2c;
+      --text-light: #6b6b6b; --red: #c0392b; --radius: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Jost', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+    a { text-decoration: none; color: inherit; }
+
+    /* LOGIN */
+    #loginScreen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .login-box {
+      background: var(--white); border-radius: 16px; padding: 48px 40px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1); width: 100%; max-width: 380px;
+      text-align: center;
+    }
+    .login-box .logo { font-size: 2.5rem; margin-bottom: 8px; }
+    .login-box h1 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.8rem;
+      color: var(--green-dark); margin-bottom: 4px;
+    }
+    .login-box p { font-size: 0.85rem; color: var(--text-light); margin-bottom: 32px; font-weight: 300; }
+    .login-box input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--cream-dark);
+      border-radius: 8px; font-size: 1rem; font-family: 'Jost', sans-serif;
+      outline: none; transition: border-color 0.2s; letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .login-box input:focus { border-color: var(--green); }
+    .login-box button {
+      width: 100%; padding: 13px; background: var(--green); color: white;
+      border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 500;
+      font-family: 'Jost', sans-serif; cursor: pointer; transition: background 0.2s;
+    }
+    .login-box button:hover { background: var(--green-dark); }
+    .login-error { color: var(--red); font-size: 0.83rem; margin-top: 10px; display: none; }
+
+    /* ADMIN */
+    #adminScreen { display: none; }
+    .admin-header {
+      background: var(--green-dark); color: white; padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .admin-header-left { display: flex; align-items: center; gap: 12px; }
+    .admin-header h1 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600;
+    }
+    .admin-header-btns { display: flex; gap: 10px; }
+    .btn { padding: 9px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 500;
+      font-family: 'Jost', sans-serif; cursor: pointer; border: none; transition: background 0.2s, transform 0.15s; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-primary:hover { background: #3a5532; }
+    .btn-outline { background: transparent; color: white; border: 1.5px solid rgba(255,255,255,0.5); }
+    .btn-outline:hover { background: rgba(255,255,255,0.1); }
+    .btn-danger { background: var(--red); color: white; }
+    .btn-danger:hover { background: #a93226; }
+    .btn-sm { padding: 6px 14px; font-size: 0.78rem; }
+
+    .admin-body { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    .admin-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+    }
+    .admin-toolbar h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--green-dark); }
+
+    /* GRADE DE PRODUTOS */
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+
+    .admin-card {
+      background: var(--white); border-radius: var(--radius);
+      border: 1px solid var(--cream-dark); overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .admin-card-img {
+      height: 160px; background: var(--cream); display: flex;
+      align-items: center; justify-content: center; font-size: 3rem;
+      overflow: hidden; position: relative;
+    }
+    .admin-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .admin-card-img .img-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .admin-card-img:hover .img-overlay { opacity: 1; }
+    .img-overlay label, .img-overlay button {
+      background: white; color: var(--text); border: none; border-radius: 6px;
+      padding: 6px 12px; font-size: 0.78rem; font-family: 'Jost', sans-serif;
+      cursor: pointer; font-weight: 500; transition: background 0.15s;
+    }
+    .img-overlay label:hover, .img-overlay button:hover { background: var(--cream); }
+
+    .admin-card-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .admin-card-body label { font-size: 0.72rem; font-weight: 500; color: var(--text-light);
+      letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+    .admin-card-body input, .admin-card-body textarea, .admin-card-body select {
+      width: 100%; padding: 8px 10px; border: 1.5px solid var(--cream-dark);
+      border-radius: 6px; font-size: 0.88rem; font-family: 'Jost', sans-serif;
+      color: var(--text); outline: none; transition: border-color 0.2s; background: var(--white);
+    }
+    .admin-card-body input:focus, .admin-card-body textarea:focus,
+    .admin-card-body select:focus { border-color: var(--green); }
+    .admin-card-body textarea { resize: vertical; min-height: 64px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .admin-card-footer {
+      padding: 12px 16px; border-top: 1px solid var(--cream-dark);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+
+    /* MODAL NOVO PRODUTO */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 500; align-items: center; justify-content: center; padding: 24px;
+      backdrop-filter: blur(2px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white); border-radius: 14px; padding: 32px;
+      width: 100%; max-width: 480px; box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem;
+      color: var(--green-dark); margin-bottom: 20px; }
+    .modal .form-group { margin-bottom: 14px; }
+    .modal .form-group label { font-size: 0.75rem; font-weight: 500; color: var(--text-light);
+      letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+    .modal .form-group input, .modal .form-group textarea, .modal .form-group select {
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--cream-dark);
+      border-radius: 8px; font-size: 0.9rem; font-family: 'Jost', sans-serif;
+      color: var(--text); outline: none; transition: border-color 0.2s; background: var(--white);
+    }
+    .modal .form-group input:focus, .modal .form-group textarea:focus,
+    .modal .form-group select:focus { border-color: var(--green); }
+    .modal .form-group textarea { resize: vertical; min-height: 72px; }
+    .modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .modal-btns .btn { color: var(--text); background: var(--cream); }
+    .modal-btns .btn:hover { background: var(--cream-dark); }
+    .modal-btns .btn-primary { background: var(--green); color: white; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--green-dark); color: white; padding: 12px 24px; border-radius: 50px;
+      font-size: 0.88rem; font-weight: 400; z-index: 9999; opacity: 0;
+      transition: all 0.3s ease; white-space: nowrap; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* IMG PREVIEW no modal */
+    .img-preview-wrap { margin-top: 8px; }
+    .img-preview-wrap img { max-height: 120px; border-radius: 8px; object-fit: cover; }
+
+    @media (max-width: 600px) {
+      .admin-header { padding: 14px 16px; flex-wrap: wrap; }
+      .admin-body { padding: 20px 16px; }
+      .row2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="logo">🎈</div>
+    <h1>Lolla Admin</h1>
+    <p>Área restrita — somente para administradores</p>
+    <input type="password" id="passwordInput" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button onclick="doLogin()">Entrar</button>
+    <p class="login-error" id="loginError">Senha incorreta. Tente novamente.</p>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="adminScreen">
+  <header class="admin-header">
+    <div class="admin-header-left">
+      <span style="font-size:1.4rem">🎈</span>
+      <h1>Lolla Admin</h1>
+    </div>
+    <div class="admin-header-btns">
+      <a href="index.html" target="_blank" class="btn btn-outline">Ver site →</a>
+      <button class="btn btn-outline" onclick="resetProducts()">Restaurar padrão</button>
+      <button class="btn btn-outline" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="admin-body">
+    <div class="admin-toolbar">
+      <h2>Produtos do Catálogo</h2>
+      <button class="btn btn-primary" onclick="openNewModal()">+ Novo produto</button>
+    </div>
+    <div class="admin-grid" id="adminGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL NOVO PRODUTO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Novo Produto</h2>
+    <div class="form-group">
+      <label>Nome do produto</label>
+      <input type="text" id="mName" placeholder="Ex: Mesa Bistrô Redonda" />
+    </div>
+    <div class="form-group">
+      <label>Descrição</label>
+      <textarea id="mDesc" placeholder="Breve descrição do item..."></textarea>
+    </div>
+    <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>Preço (R$)</label>
+        <input type="number" id="mPrice" placeholder="0" min="0" />
+      </div>
+      <div>
+        <label>Unidade</label>
+        <input type="text" id="mUnit" placeholder="/diária" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="mCategory">
+        <option value="mesas">Mesas &amp; Cadeiras</option>
+        <option value="paineis">Painéis</option>
+        <option value="pegue-e-monte">Pegue &amp; Monte</option>
+        <option value="decoracao">Decoração</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Emoji (quando não tem foto)</label>
+      <input type="text" id="mEmoji" placeholder="🎀" maxlength="4" />
+    </div>
+    <div class="form-group">
+      <label>Foto do produto</label>
+      <input type="file" id="mImage" accept="image/*" onchange="previewModalImage(this)" />
+      <div class="img-preview-wrap" id="mImagePreview"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveModal()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONFIGURAÇÃO =====
+const ADMIN_PASSWORD = 'lolla2025'; // Troque esta senha!
+const SESSION_KEY = 'lolla_admin_session';
+const PRODUCTS_KEY = 'lolla_products';
+
+// ===== DADOS PADRÃO (mesmos do script.js) =====
+const defaultProducts = [
+  { id: 1, category: "mesas", emoji: "🪑", image: "", name: "Mesa Bistrô Redonda", description: "Mesa bistrô com tampo redondo, perfeita para lounges e coquetéis.", price: 45, unit: "/diária" },
+  { id: 2, category: "mesas", emoji: "🪑", image: "", name: "Mesa Posta 6 Lugares", description: "Mesa retangular com toalha inclusa, ideal para 6 pessoas.", price: 120, unit: "/diária" },
+  { id: 3, category: "mesas", emoji: "🪑", image: "", name: "Cadeira Tiffany", description: "Cadeira Tiffany transparente, elegante para qualquer tema de festa.", price: 12, unit: "/un/diária" },
+  { id: 4, category: "paineis", emoji: "🖼️", image: "", name: "Painel Florido", description: "Painel com flores artificiais 2x2m, ideal para fotos e cenário de festa.", price: 180, unit: "/diária" },
+  { id: 5, category: "paineis", emoji: "🖼️", image: "", name: "Painel de Balões", description: "Painel com estrutura para balões coloridos, montado no local do evento.", price: 150, unit: "/diária" },
+  { id: 6, category: "paineis", emoji: "🖼️", image: "", name: "Painel Ripado", description: "Painel ripado em madeira clara, estilo rústico chic para qualquer tema.", price: 200, unit: "/diária" },
+  { id: 7, category: "pegue-e-monte", emoji: "", image: "fotos/kit1.jpg", name: "Kit Mesa Posta Completa", description: "Toalha, caminho de mesa, porta-guardanapo e vela. Basta montar!", price: 85, unit: "/kit" },
+  { id: 8, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Cantinho do Bolo", description: "Mesinha, toalha, faqueiro decorativo e arranjo floral. Pronto para usar!", price: 110, unit: "/kit" },
+  { id: 9, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Lounge Externo", description: "Tapete, puff, mesinha de centro e lanternas. Crie um cantinho aconchegante.", price: 220, unit: "/kit" },
+  { id: 10, category: "decoracao", emoji: "🎊", image: "", name: "Arranjo de Balões", description: "Arranjo com balões coloridos ou temáticos, entregue inflado no local.", price: 60, unit: "/arranjo" },
+  { id: 11, category: "decoracao", emoji: "🎊", image: "", name: "Coluna de Balões", description: "Coluna de balões 1,5m de altura, ideal para entrada ou palco do evento.", price: 90, unit: "/unidade" },
+  { id: 12, category: "decoracao", emoji: "🎊", image: "", name: "Varal de Luzes", description: "Varal de luzes LED 5m, cria ambiente intimista e romântico para o evento.", price: 35, unit: "/diária" }
+];
+
+const categoryLabels = {
+  "mesas": "Mesas & Cadeiras", "paineis": "Painéis",
+  "pegue-e-monte": "Pegue & Monte", "decoracao": "Decoração"
+};
+
+let products = [];
+let editingId = null;
+let pendingImageData = '';
+
+// ===== LOGIN =====
+function doLogin() {
+  const val = document.getElementById('passwordInput').value;
+  if (val === ADMIN_PASSWORD) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    showAdmin();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function showAdmin() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminScreen').style.display = 'block';
+  loadProducts();
+  renderAdminGrid();
+}
+
+// ===== PRODUTOS =====
+function loadProducts() {
+  try {
+    const saved = localStorage.getItem(PRODUCTS_KEY);
+    products = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultProducts));
+  } catch(e) {
+    products = JSON.parse(JSON.stringify(defaultProducts));
+  }
+}
+
+function saveProducts() {
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  showToast('Alterações salvas com sucesso!');
+}
+
+function resetProducts() {
+  if (!confirm('Restaurar todos os produtos para o padrão original? As alterações serão perdidas.')) return;
+  localStorage.removeItem(PRODUCTS_KEY);
+  loadProducts();
+  renderAdminGrid();
+  showToast('Produtos restaurados para o padrão.');
+}
+
+function nextId() {
+  return products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+}
+</script>
+
+<script>
+// ===== RENDERIZAÇÃO ADMIN =====
+function renderAdminGrid() {
+  const grid = document.getElementById('adminGrid');
+  if (!products.length) {
+    grid.innerHTML = '<p style="color:var(--text-light);grid-column:1/-1">Nenhum produto cadastrado.</p>';
+    return;
+  }
+  grid.innerHTML = products.map(p => {
+    const imgHtml = p.image
+      ? `<img src="${p.image}" alt="${p.name}" />`
+      : `<span>${p.emoji || '📦'}</span>`;
+    return `
+    <div class="admin-card" id="card-${p.id}">
+      <div class="admin-card-img">
+        ${imgHtml}
+        <div class="img-overlay">
+          <label title="Trocar foto">
+            📷 Foto
+            <input type="file" accept="image/*" style="display:none" onchange="changeCardImage(this, ${p.id})" />
+          </label>
+          ${p.image ? `<button onclick="removeCardImage(${p.id})">✕ Remover</button>` : ''}
+        </div>
+      </div>
+      <div class="admin-card-body">
+        <div>
+          <label>Nome</label>
+          <input type="text" value="${escHtml(p.name)}" onchange="updateField(${p.id},'name',this.value)" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <textarea onchange="updateField(${p.id},'description',this.value)">${escHtml(p.description)}</textarea>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Preço (R$)</label>
+            <input type="number" value="${p.price}" min="0" onchange="updateField(${p.id},'price',parseFloat(this.value)||0)" />
+          </div>
+          <div>
+            <label>Unidade</label>
+            <input type="text" value="${escHtml(p.unit)}" onchange="updateField(${p.id},'unit',this.value)" />
+          </div>
+        </div>
+        <div>
+          <label>Categoria</label>
+          <select onchange="updateField(${p.id},'category',this.value)">
+            ${Object.entries(categoryLabels).map(([v,l]) =>
+              `<option value="${v}"${p.category===v?' selected':''}>${l}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div>
+          <label>Emoji (sem foto)</label>
+          <input type="text" value="${p.emoji||''}" maxlength="4" onchange="updateField(${p.id},'emoji',this.value)" />
+        </div>
+      </div>
+      <div class="admin-card-footer">
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Excluir</button>
+        <button class="btn btn-primary btn-sm" onclick="saveProducts()">Salvar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateField(id, field, value) {
+  const p = products.find(x => x.id === id);
+  if (p) p[field] = value;
+}
+
+function deleteProduct(id) {
+  if (!confirm('Excluir este produto do catálogo?')) return;
+  products = products.filter(p => p.id !== id);
+  saveProducts();
+  renderAdminGrid();
+}
+
+// ===== IMAGEM NO CARD =====
+function changeCardImage(input, id) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const p = products.find(x => x.id === id);
+    if (p) { p.image = e.target.result; saveProducts(); renderAdminGrid(); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeCardImage(id) {
+  const p = products.find(x => x.id === id);
+  if (p) { p.image = ''; saveProducts(); renderAdminGrid(); }
+}
+
+// ===== MODAL NOVO PRODUTO =====
+function openNewModal() {
+  editingId = null;
+  pendingImageData = '';
+  document.getElementById('modalTitle').textContent = 'Novo Produto';
+  document.getElementById('mName').value = '';
+  document.getElementById('mDesc').value = '';
+  document.getElementById('mPrice').value = '';
+  document.getElementById('mUnit').value = '/diária';
+  document.getElementById('mCategory').value = 'mesas';
+  document.getElementById('mEmoji').value = '📦';
+  document.getElementById('mImage').value = '';
+  document.getElementById('mImagePreview').innerHTML = '';
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('mName').focus();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function previewModalImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingImageData = e.target.result;
+    document.getElementById('mImagePreview').innerHTML =
+      `<img src="${e.target.result}" alt="preview" />`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveModal() {
+  const name = document.getElementById('mName').value.trim();
+  if (!name) { alert('Informe o nome do produto.'); return; }
+  const newProduct = {
+    id: nextId(),
+    category: document.getElementById('mCategory').value,
+    emoji: document.getElementById('mEmoji').value.trim() || '📦',
+    image: pendingImageData,
+    name,
+    description: document.getElementById('mDesc').value.trim(),
+    price: parseFloat(document.getElementById('mPrice').value) || 0,
+    unit: document.getElementById('mUnit').value.trim() || '/diária'
+  };
+  products.push(newProduct);
+  saveProducts();
+  renderAdminGrid();
+  closeModal();
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Fecha modal ao clicar fora
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// ===== INIT =====
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  showAdmin();
+} else {
+  document.getElementById('loginScreen').style.display = 'flex';
+  setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+}
+</script>
+</body>
+</html>

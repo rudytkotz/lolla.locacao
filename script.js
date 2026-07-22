@@ -1,3 +1,87 @@
+// ===== DADOS DOS PRODUTOS =====
+const defaultProducts = [
+  { id: 1, category: "mesas", emoji: "🪑", image: "", name: "Mesa Bistrô Redonda", description: "Mesa bistrô com tampo redondo, perfeita para lounges e coquetéis.", price: 45, unit: "/diária" },
+  { id: 2, category: "mesas", emoji: "🪑", image: "", name: "Mesa Posta 6 Lugares", description: "Mesa retangular com toalha inclusa, ideal para 6 pessoas.", price: 120, unit: "/diária" },
+  { id: 3, category: "mesas", emoji: "🪑", image: "", name: "Cadeira Tiffany", description: "Cadeira Tiffany transparente, elegante para qualquer tema de festa.", price: 12, unit: "/un/diária" },
+  { id: 4, category: "paineis", emoji: "🖼️", image: "", name: "Painel Florido", description: "Painel com flores artificiais 2x2m, ideal para fotos e cenário de festa.", price: 180, unit: "/diária" },
+  { id: 5, category: "paineis", emoji: "🖼️", image: "", name: "Painel de Balões", description: "Painel com estrutura para balões coloridos, montado no local do evento.", price: 150, unit: "/diária" },
+  { id: 6, category: "paineis", emoji: "🖼️", image: "", name: "Painel Ripado", description: "Painel ripado em madeira clara, estilo rústico chic para qualquer tema.", price: 200, unit: "/diária" },
+  { id: 7, category: "pegue-e-monte", emoji: "", image: "fotos/kit1.jpg", name: "Kit Mesa Posta Completa", description: "Toalha, caminho de mesa, porta-guardanapo e vela. Basta montar!", price: 85, unit: "/kit" },
+  { id: 8, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Cantinho do Bolo", description: "Mesinha, toalha, faqueiro decorativo e arranjo floral. Pronto para usar!", price: 110, unit: "/kit" },
+  { id: 9, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Lounge Externo", description: "Tapete, puff, mesinha de centro e lanternas. Crie um cantinho aconchegante.", price: 220, unit: "/kit" },
+  { id: 10, category: "decoracao", emoji: "🎊", image: "", name: "Arranjo de Balões", description: "Arranjo com balões coloridos ou temáticos, entregue inflado no local.", price: 60, unit: "/arranjo" },
+  { id: 11, category: "decoracao", emoji: "🎊", image: "", name: "Coluna de Balões", description: "Coluna de balões 1,5m de altura, ideal para entrada ou palco do evento.", price: 90, unit: "/unidade" },
+  { id: 12, category: "decoracao", emoji: "🎊", image: "", name: "Varal de Luzes", description: "Varal de luzes LED 5m, cria ambiente intimista e romântico para o evento.", price: 35, unit: "/diária" }
+];
+
+const categoryLabels = {
+  "mesas": "Mesas & Cadeiras",
+  "paineis": "Painéis",
+  "pegue-e-monte": "Pegue & Monte",
+  "decoracao": "Decoração"
+};
+
+function getProducts() {
+  try {
+    const saved = localStorage.getItem('lolla_products');
+    return saved ? JSON.parse(saved) : defaultProducts;
+  } catch(e) {
+    return defaultProducts;
+  }
+}
+
+function renderProducts() {
+  const products = getProducts();
+  const grid = document.getElementById('productsGrid');
+  if (!grid) return;
+
+  grid.innerHTML = products.map(p => {
+    const imgHtml = p.image
+      ? `<div class="product-img"><img src="${p.image}" alt="${p.name}" /></div>`
+      : `<div class="product-img emoji">${p.emoji || '📦'}</div>`;
+
+    const label = categoryLabels[p.category] || p.category;
+    const unitEscaped = p.unit.replace(/'/g, "\\'");
+    const nameEscaped = p.name.replace(/'/g, "\\'");
+
+    return `
+      <div class="product-card" data-category="${p.category}">
+        ${imgHtml}
+        <div class="product-info">
+          <span class="product-tag">${label}</span>
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <div class="product-footer">
+            <span class="price">R$ ${p.price}<small>${p.unit}</small></span>
+            <div class="card-add-row">
+              <div class="card-qty">
+                <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
+                <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
+                <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+              </div>
+              <button class="btn-card" onclick="addToCartFromCard(this,'${nameEscaped}',${p.price},'${unitEscaped}')">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Reaplica filtro ativo
+  const activeFilter = document.querySelector('.filter-btn.active');
+  const filter = activeFilter ? activeFilter.dataset.filter : 'todos';
+  document.querySelectorAll('.product-card').forEach(card => {
+    card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
+  });
+
+  // Reaplica animação de entrada
+  document.querySelectorAll('.product-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    observer.observe(el);
+  });
+}
+
 // ===== LIGHTBOX =====
 function openLightbox(src, caption) {
   const lb = document.getElementById('lightbox');
@@ -230,7 +314,11 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1 });
 
-document.querySelectorAll('.product-card, .sobre-card, .contato-card').forEach(el => {
+// Renderiza produtos dinamicamente
+renderProducts();
+
+// Animação para cards estáticos (sobre, contato)
+document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
   el.style.opacity = '0';
   el.style.transform = 'translateY(20px)';
   el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
