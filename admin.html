@@ -292,7 +292,6 @@ const categoryLabels = {
 
 let products = [];
 let editingId = null;
-let pendingImageData = '';
 
 // ===== LOGIN =====
 function doLogin() {
@@ -431,16 +430,39 @@ function deleteProduct(id) {
   renderAdminGrid();
 }
 
+// ===== CLOUDINARY =====
+const CLOUDINARY_CLOUD = 'dqbrytjg';
+const CLOUDINARY_PRESET = 'lolla_upload';
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+
+  showToast('⏳ Enviando imagem...');
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) throw new Error('Falha no upload');
+  const data = await res.json();
+  // URL otimizada: qualidade automática, formato automático
+  return data.secure_url.replace('/upload/', '/upload/q_auto,f_auto/');
+}
+
 // ===== IMAGEM NO CARD =====
-function changeCardImage(input, id) {
+async function changeCardImage(input, id) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
+  try {
+    const url = await uploadToCloudinary(file);
     const p = products.find(x => x.id === id);
-    if (p) { p.image = e.target.result; saveProducts(); renderAdminGrid(); }
-  };
-  reader.readAsDataURL(file);
+    if (p) { p.image = url; saveProducts(); renderAdminGrid(); }
+  } catch(e) {
+    showToast('❌ Erro ao enviar imagem. Tente novamente.');
+  }
 }
 
 function removeCardImage(id) {
@@ -473,23 +495,35 @@ function closeModal() {
 function previewModalImage(input) {
   const file = input.files[0];
   if (!file) return;
+  // Mostra preview local imediato enquanto faz upload
   const reader = new FileReader();
   reader.onload = e => {
-    pendingImageData = e.target.result;
     document.getElementById('mImagePreview').innerHTML =
       `<img src="${e.target.result}" alt="preview" />`;
   };
   reader.readAsDataURL(file);
 }
 
-function saveModal() {
+async function saveModal() {
   const name = document.getElementById('mName').value.trim();
   if (!name) { alert('Informe o nome do produto.'); return; }
+
+  let imageUrl = '';
+  const fileInput = document.getElementById('mImage');
+  if (fileInput.files[0]) {
+    try {
+      imageUrl = await uploadToCloudinary(fileInput.files[0]);
+    } catch(e) {
+      showToast('❌ Erro ao enviar imagem. Tente novamente.');
+      return;
+    }
+  }
+
   const newProduct = {
     id: nextId(),
     category: document.getElementById('mCategory').value,
     emoji: document.getElementById('mEmoji').value.trim() || '📦',
-    image: pendingImageData,
+    image: imageUrl,
     name,
     description: document.getElementById('mDesc').value.trim(),
     price: parseFloat(document.getElementById('mPrice').value) || 0,
