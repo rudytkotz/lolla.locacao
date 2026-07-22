@@ -1,17 +1,17 @@
 // ===== DADOS DOS PRODUTOS =====
 const defaultProducts = [
-  { id: 1, category: "mesas", emoji: "🪑", image: "", name: "Mesa Bistrô Redonda", description: "Mesa bistrô com tampo redondo, perfeita para lounges e coquetéis.", price: 45, unit: "/diária" },
-  { id: 2, category: "mesas", emoji: "🪑", image: "", name: "Mesa Posta 6 Lugares", description: "Mesa retangular com toalha inclusa, ideal para 6 pessoas.", price: 120, unit: "/diária" },
-  { id: 3, category: "mesas", emoji: "🪑", image: "", name: "Cadeira Tiffany", description: "Cadeira Tiffany transparente, elegante para qualquer tema de festa.", price: 12, unit: "/un/diária" },
-  { id: 4, category: "paineis", emoji: "🖼️", image: "", name: "Painel Florido", description: "Painel com flores artificiais 2x2m, ideal para fotos e cenário de festa.", price: 180, unit: "/diária" },
-  { id: 5, category: "paineis", emoji: "🖼️", image: "", name: "Painel de Balões", description: "Painel com estrutura para balões coloridos, montado no local do evento.", price: 150, unit: "/diária" },
-  { id: 6, category: "paineis", emoji: "🖼️", image: "", name: "Painel Ripado", description: "Painel ripado em madeira clara, estilo rústico chic para qualquer tema.", price: 200, unit: "/diária" },
-  { id: 7, category: "pegue-e-monte", emoji: "", image: "fotos/kit1.jpg", name: "Kit Mesa Posta Completa", description: "Toalha, caminho de mesa, porta-guardanapo e vela. Basta montar!", price: 85, unit: "/kit" },
-  { id: 8, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Cantinho do Bolo", description: "Mesinha, toalha, faqueiro decorativo e arranjo floral. Pronto para usar!", price: 110, unit: "/kit" },
-  { id: 9, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Lounge Externo", description: "Tapete, puff, mesinha de centro e lanternas. Crie um cantinho aconchegante.", price: 220, unit: "/kit" },
-  { id: 10, category: "decoracao", emoji: "🎊", image: "", name: "Arranjo de Balões", description: "Arranjo com balões coloridos ou temáticos, entregue inflado no local.", price: 60, unit: "/arranjo" },
-  { id: 11, category: "decoracao", emoji: "🎊", image: "", name: "Coluna de Balões", description: "Coluna de balões 1,5m de altura, ideal para entrada ou palco do evento.", price: 90, unit: "/unidade" },
-  { id: 12, category: "decoracao", emoji: "🎊", image: "", name: "Varal de Luzes", description: "Varal de luzes LED 5m, cria ambiente intimista e romântico para o evento.", price: 35, unit: "/diária" }
+  { id: 1, category: "mesas", emoji: "🪑", image: "", name: "Mesa Bistrô Redonda", description: "Mesa bistrô com tampo redondo, perfeita para lounges e coquetéis.", price: 45, unit: "/diária", stock: null },
+  { id: 2, category: "mesas", emoji: "🪑", image: "", name: "Mesa Posta 6 Lugares", description: "Mesa retangular com toalha inclusa, ideal para 6 pessoas.", price: 120, unit: "/diária", stock: null },
+  { id: 3, category: "mesas", emoji: "🪑", image: "", name: "Cadeira Tiffany", description: "Cadeira Tiffany transparente, elegante para qualquer tema de festa.", price: 12, unit: "/un/diária", stock: null },
+  { id: 4, category: "paineis", emoji: "🖼️", image: "", name: "Painel Florido", description: "Painel com flores artificiais 2x2m, ideal para fotos e cenário de festa.", price: 180, unit: "/diária", stock: null },
+  { id: 5, category: "paineis", emoji: "🖼️", image: "", name: "Painel de Balões", description: "Painel com estrutura para balões coloridos, montado no local do evento.", price: 150, unit: "/diária", stock: null },
+  { id: 6, category: "paineis", emoji: "🖼️", image: "", name: "Painel Ripado", description: "Painel ripado em madeira clara, estilo rústico chic para qualquer tema.", price: 200, unit: "/diária", stock: null },
+  { id: 7, category: "pegue-e-monte", emoji: "", image: "fotos/kit1.jpg", name: "Kit Mesa Posta Completa", description: "Toalha, caminho de mesa, porta-guardanapo e vela. Basta montar!", price: 85, unit: "/kit", stock: null },
+  { id: 8, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Cantinho do Bolo", description: "Mesinha, toalha, faqueiro decorativo e arranjo floral. Pronto para usar!", price: 110, unit: "/kit", stock: null },
+  { id: 9, category: "pegue-e-monte", emoji: "🎀", image: "", name: "Kit Lounge Externo", description: "Tapete, puff, mesinha de centro e lanternas. Crie um cantinho aconchegante.", price: 220, unit: "/kit", stock: null },
+  { id: 10, category: "decoracao", emoji: "🎊", image: "", name: "Arranjo de Balões", description: "Arranjo com balões coloridos ou temáticos, entregue inflado no local.", price: 60, unit: "/arranjo", stock: null },
+  { id: 11, category: "decoracao", emoji: "🎊", image: "", name: "Coluna de Balões", description: "Coluna de balões 1,5m de altura, ideal para entrada ou palco do evento.", price: 90, unit: "/unidade", stock: null },
+  { id: 12, category: "decoracao", emoji: "🎊", image: "", name: "Varal de Luzes", description: "Varal de luzes LED 5m, cria ambiente intimista e romântico para o evento.", price: 35, unit: "/diária", stock: null }
 ];
 
 const categoryLabels = {
@@ -43,6 +43,11 @@ function renderProducts() {
     const label = categoryLabels[p.category] || p.category;
     const unitEscaped = p.unit.replace(/'/g, "\\'");
     const nameEscaped = p.name.replace(/'/g, "\\'");
+    const stock = (p.stock !== null && p.stock !== undefined && p.stock !== '') ? parseInt(p.stock) : null;
+    const stockHtml = stock !== null
+      ? `<span class="product-stock ${stock === 0 ? 'out' : ''}">${stock === 0 ? '⚠️ Indisponível' : `📦 ${stock} disponíve${stock === 1 ? 'l' : 'is'}`}</span>`
+      : '';
+    const addDisabled = stock === 0 ? 'disabled' : '';
 
     return `
       <div class="product-card" data-category="${p.category}">
@@ -51,15 +56,16 @@ function renderProducts() {
           <span class="product-tag">${label}</span>
           <h3>${p.name}</h3>
           <p>${p.description}</p>
+          ${stockHtml}
           <div class="product-footer">
             <span class="price">R$ ${p.price}<small>${p.unit}</small></span>
             <div class="card-add-row">
               <div class="card-qty">
-                <button class="card-qty-btn" onclick="cardQty(this,-1)">−</button>
-                <input class="card-qty-input" type="number" value="1" min="1" max="999" readonly />
-                <button class="card-qty-btn" onclick="cardQty(this,1)">+</button>
+                <button class="card-qty-btn" onclick="cardQty(this,-1)" ${addDisabled}>−</button>
+                <input class="card-qty-input" type="number" value="1" min="1" max="${stock !== null ? stock : 999}" readonly ${addDisabled} />
+                <button class="card-qty-btn" onclick="cardQty(this,1)" ${addDisabled}>+</button>
               </div>
-              <button class="btn-card" onclick="addToCartFromCard(this,'${nameEscaped}',${p.price},'${unitEscaped}')">Adicionar</button>
+              <button class="btn-card" onclick="addToCartFromCard(this,'${nameEscaped}',${p.price},'${unitEscaped}')" ${addDisabled}>${stock === 0 ? 'Indisponível' : 'Adicionar'}</button>
             </div>
           </div>
         </div>
