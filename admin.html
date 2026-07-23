@@ -110,6 +110,15 @@
     textarea.editable { resize: vertical; min-height: 52px; }
     select.editable { cursor: pointer; }
 
+    /* Drag handle */
+    .drag-handle {
+      cursor: grab; color: var(--text-light); font-size: 1rem;
+      padding: 0 2px; flex-shrink: 0; user-select: none;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    tr.drag-over td { border-top: 2px solid var(--green) !important; }
+    tr.dragging { opacity: 0.4; }
+
     /* Checkboxes de categoria */
     .cat-checks { display: flex; flex-wrap: wrap; gap: 6px; min-width: 160px; }
     .cat-check-label {
@@ -272,7 +281,6 @@
               <th>Nome (label)</th>
               <th>Slug (identificador)</th>
               <th>Categoria pai</th>
-              <th>Ordem</th>
               <th class="td-actions">Ações</th>
             </tr>
           </thead>
@@ -357,10 +365,6 @@
       <select id="cParent">
         <option value="">— nenhuma (categoria principal) —</option>
       </select>
-    </div>
-    <div class="form-group">
-      <label>Ordem</label>
-      <input type="number" id="cOrdem" value="0" min="0" />
     </div>
     <div class="modal-btns">
       <button class="btn btn-cancel" onclick="closeCatModal()">Cancelar</button>
@@ -687,7 +691,7 @@ async function loadCats() {
 function renderCatsTable(list) {
   const tbody = document.getElementById('catsBody');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhuma categoria. Clique em "+ Nova categoria".</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nenhuma categoria. Clique em "+ Nova categoria".</td></tr>`;
     return;
   }
 
@@ -698,23 +702,19 @@ function renderCatsTable(list) {
     rows.push({ ...r, _isRoot: true });
     list.filter(c => c.parent_slug === r.slug).forEach(s => rows.push({ ...s, _isRoot: false }));
   });
-  // Qualquer órfão (pai inexistente) no fim
   list.filter(c => c.parent_slug && !roots.find(r => r.slug === c.parent_slug))
     .forEach(s => rows.push({ ...s, _isRoot: false }));
 
-  const rootOptions = roots.map(r => `<option value="${r.slug}">${escHtml(r.label)}</option>`).join('');
-
   tbody.innerHTML = rows.map(c => `
-    <tr id="catrow-${c.id}" style="${!c._isRoot ? 'background:#faf8f4' : ''}">
-      <td>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${!c._isRoot ? '<span style="color:var(--text-light);font-size:0.9rem">↳</span>' : ''}
-          <input class="editable" value="${escHtml(c.label)}" onblur="saveCatField(${c.id},'label',this.value)"
-            style="flex:1" />
-          ${c._isRoot ? `<button class="btn btn-sm" title="Adicionar subcategoria"
-            style="background:var(--green);color:white;border-radius:50%;width:24px;height:24px;padding:0;font-size:1rem;line-height:1;flex-shrink:0"
-            onclick="openCatModalWithParent('${escHtml(c.slug)}')">+</button>` : ''}
-        </div>
+    <tr id="catrow-${c.id}" data-id="${c.id}" data-parent="${c.parent_slug||''}" draggable="true"
+        style="${!c._isRoot ? 'background:#faf8f4' : ''}">
+      <td style="display:flex;align-items:center;gap:6px;cursor:default">
+        <span class="drag-handle" title="Arrastar para reordenar">⠿</span>
+        ${!c._isRoot ? '<span style="color:var(--text-light);font-size:0.9rem">↳</span>' : ''}
+        <input class="editable" value="${escHtml(c.label)}" onblur="saveCatField(${c.id},'label',this.value)" style="flex:1" />
+        ${c._isRoot ? `<button class="btn btn-sm" title="Adicionar subcategoria"
+          style="background:var(--green);color:white;border-radius:50%;width:24px;height:24px;padding:0;font-size:1rem;line-height:1;flex-shrink:0"
+          onclick="openCatModalWithParent('${escHtml(c.slug)}')">+</button>` : ''}
       </td>
       <td><code style="font-size:0.85rem;color:var(--green-dark)">${escHtml(c.slug)}</code></td>
       <td>
@@ -725,11 +725,67 @@ function renderCatsTable(list) {
           ).join('')}
         </select>
       </td>
-      <td><input class="editable" type="number" value="${c.ordem||0}" min="0" onblur="saveCatField(${c.id},'ordem',parseInt(this.value)||0)" style="width:60px" /></td>
       <td class="td-actions">
         <button class="btn btn-sm btn-danger" onclick="deleteCat(${c.id},'${escHtml(c.slug)}')">Excluir</button>
       </td>
     </tr>`).join('');
+
+  initCatDragDrop();
+}
+
+// ===== DRAG & DROP CATEGORIAS =====
+function initCatDragDrop() {
+  const tbody = document.getElementById('catsBody');
+  let dragSrc = null;
+
+  tbody.querySelectorAll('tr[draggable]').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrc = row;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+    });
+
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+      if (row !== dragSrc) row.classList.add('drag-over');
+    });
+
+    row.addEventListener('drop', async e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+
+      // Reordena visualmente
+      const rows = [...tbody.querySelectorAll('tr[data-id]')];
+      const srcIdx = rows.indexOf(dragSrc);
+      const tgtIdx = rows.indexOf(row);
+      if (srcIdx < tgtIdx) row.after(dragSrc);
+      else row.before(dragSrc);
+
+      // Salva nova ordem no banco — recalcula ordem de todas as linhas
+      await saveCatOrder();
+    });
+  });
+}
+
+async function saveCatOrder() {
+  const rows = [...document.querySelectorAll('#catsBody tr[data-id]')];
+  const updates = rows.map((r, i) => ({ id: parseInt(r.dataset.id), ordem: i + 1 }));
+  try {
+    await Promise.all(updates.map(u =>
+      sbFetch(`categorias?id=eq.${u.id}`, { method: 'PATCH', body: JSON.stringify({ ordem: u.ordem }) })
+    ));
+    showToast('✓ Ordem salva');
+  } catch(e) {
+    showToast('❌ Erro ao salvar ordem', true);
+  }
 }
 
 async function saveCatField(id, field, value) {
@@ -767,7 +823,6 @@ function openCatModalWithParent(parentSlug) {
   document.getElementById('catModalTitle').textContent = parentSlug ? 'Nova Subcategoria' : 'Nova Categoria';
   document.getElementById('cLabel').value = '';
   document.getElementById('cSlug').value = '';
-  document.getElementById('cOrdem').value = cats.length + 1;
   // Popula select de pai com categorias raiz
   const roots = cats.filter(c => !c.parent_slug);
   document.getElementById('cParent').innerHTML =
@@ -792,12 +847,12 @@ document.getElementById('cLabel').addEventListener('input', function() {
 async function saveCat() {
   const label = document.getElementById('cLabel').value.trim();
   const slug  = document.getElementById('cSlug').value.trim();
-  const ordem = parseInt(document.getElementById('cOrdem').value) || 0;
   if (!label || !slug) { alert('Preencha nome e slug.'); return; }
 
   const btn = document.getElementById('saveCatBtn');
   btn.disabled = true; btn.textContent = 'Salvando...';
   const parentSlug = document.getElementById('cParent').value || null;
+  const ordem = cats.length + 1;
   try {
     await sbFetch('categorias', { method: 'POST', body: JSON.stringify({ label, slug, ordem, parent_slug: parentSlug }) });
     showToast('✓ Categoria criada');
