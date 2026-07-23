@@ -248,6 +248,7 @@
               <th>Unidade</th>
               <th>Estoque</th>
               <th>Ordem</th>
+              <th>Keywords</th>
               <th class="td-actions">Ações</th>
             </tr>
           </thead>
@@ -320,6 +321,10 @@
     <div class="form-group">
       <label>Emoji (quando não tem foto)</label>
       <input type="text" id="mEmoji" placeholder="🎀" maxlength="4" />
+    </div>
+    <div class="form-group">
+      <label>Palavras-chave ocultas <span style="font-weight:300;text-transform:none;letter-spacing:0">(não aparecem no site, só na busca)</span></label>
+      <input type="text" id="mKeywords" placeholder="Ex: casamento, aniversário, vintage, branco" />
     </div>
     <div class="form-group">
       <label>Foto do produto</label>
@@ -481,6 +486,7 @@ function renderTable(products) {
       <td><input class="editable" value="${escHtml(p.unit||'')}" onblur="saveField(${p.id},'unit',this.value)" style="width:80px" /></td>
       <td><input class="editable" type="number" value="${p.stock??''}" min="0" placeholder="—" onblur="saveField(${p.id},'stock',this.value===''?null:parseInt(this.value))" style="width:60px" /></td>
       <td><input class="editable" type="number" value="${p.ordem||0}" min="0" onblur="saveField(${p.id},'ordem',parseInt(this.value)||0)" style="width:60px" /></td>
+      <td><input class="editable" value="${escHtml(p.keywords||'')}" placeholder="palavras separadas por vírgula" onblur="saveField(${p.id},'keywords',this.value)" title="Palavras-chave ocultas para busca" /></td>
       <td class="td-actions">
         ${p.image ? `<button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--cream-dark)" onclick="removeImg(${p.id})" title="Remover foto">✕ Foto</button>` : ''}
         <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})">Excluir</button>
@@ -569,6 +575,7 @@ function openNewModal() {
   ).join('');
   document.getElementById('mStock').value = '';
   document.getElementById('mEmoji').value = '📦';
+  document.getElementById('mKeywords').value = '';
   document.getElementById('mImage').value = '';
   document.getElementById('mImagePreview').innerHTML = '';
   document.getElementById('modalOverlay').classList.add('open');
@@ -615,6 +622,7 @@ async function saveModal() {
       unit:        document.getElementById('mUnit').value.trim() || '/diária',
       emoji:       document.getElementById('mEmoji').value.trim() || '📦',
       image:       imageUrl,
+      keywords:    document.getElementById('mKeywords').value.trim(),
       stock:       stockVal !== '' ? parseInt(stockVal) : null,
       ordem:       0
     });

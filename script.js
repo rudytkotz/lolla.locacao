@@ -31,6 +31,7 @@ async function init() {
 
   renderFilterBar(categorias || []);
   renderProducts(products || [], categorias || []);
+  initSearch();
 
   document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
     el.style.opacity = '0';
@@ -54,12 +55,8 @@ function renderFilterBar(categorias) {
     btn.addEventListener('click', () => {
       bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const filter = btn.dataset.filter;
-      document.querySelectorAll('.product-card').forEach(card => {
-        // category agora é array JSON no data-attribute
-        const cats = JSON.parse(card.dataset.categories || '[]');
-        card.classList.toggle('hidden', filter !== 'todos' && !cats.includes(filter));
-      });
+      activeFilter = btn.dataset.filter;
+      applyFilters();
     });
   });
 }
@@ -95,8 +92,11 @@ function renderProducts(products, categorias) {
       : '';
     const addDisabled = stock === 0 ? 'disabled' : '';
 
+    // Texto indexável para busca — keywords não aparecem visualmente no card
+    const searchIndex = [p.name, p.description, p.keywords].filter(Boolean).join(' ').toLowerCase();
+
     return `
-      <div class="product-card" data-categories='${JSON.stringify(cats)}'>
+      <div class="product-card" data-categories='${JSON.stringify(cats)}' data-search="${searchIndex.replace(/"/g, '&quot;')}">
         ${imgHtml}
         <div class="product-info">
           <div class="product-tags-row">${labelsHtml}</div>
@@ -282,6 +282,59 @@ document.getElementById('hamburger').addEventListener('click', () => {
 
 function closeMobileMenu() {
   document.getElementById('mobileMenu').classList.remove('open');
+}
+
+// ===== BUSCA =====
+let activeFilter = 'todos';
+
+function applyFilters() {
+  const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+  const cards = document.querySelectorAll('.product-card');
+  let visible = 0;
+
+  cards.forEach(card => {
+    const cats = JSON.parse(card.dataset.categories || '[]');
+    const search = card.dataset.search || '';
+    const matchFilter = activeFilter === 'todos' || cats.includes(activeFilter);
+    const matchSearch = !query || search.includes(query);
+    const show = matchFilter && matchSearch;
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+
+  // Mensagem sem resultados
+  let noResults = document.getElementById('noResults');
+  if (!noResults) {
+    noResults = document.createElement('p');
+    noResults.id = 'noResults';
+    noResults.className = 'no-results';
+    document.getElementById('productsGrid').after(noResults);
+  }
+  if (visible === 0 && query) {
+    noResults.innerHTML = `Nenhum resultado para <strong>"${query}"</strong>. Tente outra palavra.`;
+    noResults.style.display = 'block';
+  } else {
+    noResults.style.display = 'none';
+  }
+}
+
+// Inicializa busca após produtos renderizados
+function initSearch() {
+  const input = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('searchClear');
+  if (!input) return;
+
+  input.addEventListener('input', () => {
+    clearBtn.classList.toggle('visible', input.value.length > 0);
+    applyFilters();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.classList.remove('visible');
+    applyFilters();
+    input.focus();
+  });
 }
 
 // ===== SMOOTH SCROLL =====
