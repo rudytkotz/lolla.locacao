@@ -1,0 +1,15 @@
+# Arquivos de sistema Windows
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+
+# Arquivos temporários
+*.tmp
+*.log
+
+# Segredos (nunca subir)
+.env
+.env.local
+secrets.*
