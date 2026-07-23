@@ -15,6 +15,10 @@ async function sbFetch(path, options = {}) {
   });
   if (!res.ok) {
     const err = await res.text();
+    // Supabase pausado retorna 503 ou mensagem específica
+    if (res.status === 503 || err.includes('paused') || err.includes('offline')) {
+      throw new Error('PAUSED');
+    }
     throw new Error(err);
   }
   const text = await res.text();
@@ -23,14 +27,33 @@ async function sbFetch(path, options = {}) {
 
 // ===== INIT =====
 async function init() {
-  // Carrega categorias e produtos em paralelo
-  const [categorias, products] = await Promise.all([
-    sbFetch('categorias?select=*&order=ordem.asc,id.asc').catch(() => []),
-    sbFetch('produtos?select=*&order=ordem.asc,id.asc').catch(() => null)
-  ]);
+  const grid = document.getElementById('productsGrid');
 
-  renderFilterBar(categorias || []);
-  renderProducts(products || [], categorias || []);
+  // Mostra loading
+  if (grid) grid.innerHTML = `<div class="loading-products">Carregando catálogo...</div>`;
+
+  let categorias = [], products = [];
+
+  try {
+    categorias = await sbFetch('categorias?select=*&order=ordem.asc,id.asc') || [];
+  } catch(e) {
+    console.error('Erro ao carregar categorias:', e);
+    categorias = [];
+  }
+
+  try {
+    products = await sbFetch('produtos?select=*&order=ordem.asc,id.asc') || [];
+  } catch(e) {
+    console.error('Erro ao carregar produtos:', e);
+    const msg = e.message === 'PAUSED'
+      ? `O banco de dados está pausado. Acesse <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--green)">supabase.com/dashboard</a> e reative o projeto.`
+      : `Erro ao carregar produtos. Tente recarregar a página.`;
+    if (grid) grid.innerHTML = `<p style="color:#c0392b;grid-column:1/-1;text-align:center;padding:40px 0">${msg}</p>`;
+    return;
+  }
+
+  renderFilterBar(categorias);
+  renderProducts(products, categorias);
   initSearch();
 
   document.querySelectorAll('.sobre-card, .contato-card').forEach(el => {
