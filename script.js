@@ -42,20 +42,64 @@ async function init() {
 }
 
 // ===== FILTROS DINÂMICOS =====
+// Estado global dos filtros
+let activeFilter    = 'todos'; // slug da categoria pai ativa
+let activeSubFilter = null;    // slug da subcategoria ativa (null = todas)
+let allCategorias   = [];      // cache de todas as categorias
+
 function renderFilterBar(categorias) {
+  allCategorias = categorias;
   const bar = document.querySelector('.filter-bar');
-  if (!bar) return;
+  const subBar = document.querySelector('.subfilter-bar');
+  if (!bar || !subBar) return;
+
+  // Só categorias raiz (sem pai)
+  const roots = categorias.filter(c => !c.parent_slug);
 
   bar.innerHTML = `<button class="filter-btn active" data-filter="todos">Todos</button>` +
-    categorias.map(c =>
+    roots.map(c =>
       `<button class="filter-btn" data-filter="${c.slug}">${c.label}</button>`
     ).join('');
+
+  // Esconde subbar inicialmente
+  subBar.innerHTML = '';
+  subBar.style.display = 'none';
 
   bar.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      activeFilter = btn.dataset.filter;
+      activeFilter    = btn.dataset.filter;
+      activeSubFilter = null;
+      renderSubBar(activeFilter);
+      applyFilters();
+    });
+  });
+}
+
+function renderSubBar(parentSlug) {
+  const subBar = document.querySelector('.subfilter-bar');
+  if (!subBar) return;
+
+  const subs = allCategorias.filter(c => c.parent_slug === parentSlug);
+
+  if (!subs.length || parentSlug === 'todos') {
+    subBar.innerHTML = '';
+    subBar.style.display = 'none';
+    return;
+  }
+
+  subBar.style.display = 'flex';
+  subBar.innerHTML = `<button class="subfilter-btn active" data-sub="all">Todas</button>` +
+    subs.map(s =>
+      `<button class="subfilter-btn" data-sub="${s.slug}">${s.label}</button>`
+    ).join('');
+
+  subBar.querySelectorAll('.subfilter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      subBar.querySelectorAll('.subfilter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeSubFilter = btn.dataset.sub === 'all' ? null : btn.dataset.sub;
       applyFilters();
     });
   });
@@ -292,17 +336,30 @@ function applyFilters() {
   const cards = document.querySelectorAll('.product-card');
   let visible = 0;
 
+  // Slugs válidos para o filtro ativo:
+  // - 'todos' → sem restrição
+  // - subcategoria ativa → só ela
+  // - categoria pai → ela + todas as suas subcategorias
+  let validSlugs = null;
+  if (activeFilter !== 'todos') {
+    if (activeSubFilter) {
+      validSlugs = new Set([activeSubFilter]);
+    } else {
+      const children = allCategorias.filter(c => c.parent_slug === activeFilter).map(c => c.slug);
+      validSlugs = new Set([activeFilter, ...children]);
+    }
+  }
+
   cards.forEach(card => {
-    const cats = JSON.parse(card.dataset.categories || '[]');
+    const cats   = JSON.parse(card.dataset.categories || '[]');
     const search = card.dataset.search || '';
-    const matchFilter = activeFilter === 'todos' || cats.includes(activeFilter);
+    const matchFilter = !validSlugs || cats.some(s => validSlugs.has(s));
     const matchSearch = !query || search.includes(query);
     const show = matchFilter && matchSearch;
     card.classList.toggle('hidden', !show);
     if (show) visible++;
   });
 
-  // Mensagem sem resultados
   let noResults = document.getElementById('noResults');
   if (!noResults) {
     noResults = document.createElement('p');
