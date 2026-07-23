@@ -56,7 +56,9 @@ function renderFilterBar(categorias) {
       btn.classList.add('active');
       const filter = btn.dataset.filter;
       document.querySelectorAll('.product-card').forEach(card => {
-        card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
+        // category agora é array JSON no data-attribute
+        const cats = JSON.parse(card.dataset.categories || '[]');
+        card.classList.toggle('hidden', filter !== 'todos' && !cats.includes(filter));
       });
     });
   });
@@ -72,7 +74,7 @@ function renderProducts(products, categorias) {
     return;
   }
 
-  // Monta mapa slug -> label a partir das categorias do banco
+  // Mapa slug -> label
   const catMap = {};
   (categorias || []).forEach(c => { catMap[c.slug] = c.label; });
 
@@ -81,7 +83,10 @@ function renderProducts(products, categorias) {
       ? `<div class="product-img"><img src="${p.image}" alt="${p.name}" /></div>`
       : `<div class="product-img emoji">${p.emoji || '📦'}</div>`;
 
-    const label = catMap[p.category] || p.category;
+    // category é array; garante compatibilidade caso ainda seja string
+    const cats = Array.isArray(p.category) ? p.category : (p.category ? [p.category] : []);
+    const labelsHtml = cats.map(s => `<span class="product-tag">${catMap[s] || s}</span>`).join(' ');
+
     const unitEscaped = (p.unit || '').replace(/'/g, "\\'");
     const nameEscaped = (p.name || '').replace(/'/g, "\\'");
     const stock = (p.stock !== null && p.stock !== undefined) ? parseInt(p.stock) : null;
@@ -91,10 +96,10 @@ function renderProducts(products, categorias) {
     const addDisabled = stock === 0 ? 'disabled' : '';
 
     return `
-      <div class="product-card" data-category="${p.category}">
+      <div class="product-card" data-categories='${JSON.stringify(cats)}'>
         ${imgHtml}
         <div class="product-info">
-          <span class="product-tag">${label}</span>
+          <div class="product-tags-row">${labelsHtml}</div>
           <h3>${p.name}</h3>
           <p>${p.description || ''}</p>
           ${stockHtml}
@@ -278,18 +283,6 @@ document.getElementById('hamburger').addEventListener('click', () => {
 function closeMobileMenu() {
   document.getElementById('mobileMenu').classList.remove('open');
 }
-
-// ===== FILTRO =====
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const filter = btn.dataset.filter;
-    document.querySelectorAll('.product-card').forEach(card => {
-      card.classList.toggle('hidden', filter !== 'todos' && card.dataset.category !== filter);
-    });
-  });
-});
 
 // ===== SMOOTH SCROLL =====
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {

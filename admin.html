@@ -110,6 +110,24 @@
     textarea.editable { resize: vertical; min-height: 52px; }
     select.editable { cursor: pointer; }
 
+    /* Checkboxes de categoria */
+    .cat-checks { display: flex; flex-wrap: wrap; gap: 6px; min-width: 160px; }
+    .cat-check-label {
+      display: flex; align-items: center; gap: 5px; cursor: pointer;
+      font-size: 0.78rem; color: var(--text); white-space: nowrap;
+      background: var(--cream); border: 1.5px solid var(--cream-dark);
+      border-radius: 50px; padding: 3px 10px; transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+    .cat-check-label input { display: none; }
+    .cat-check-label:has(input:checked) {
+      background: var(--green); color: white; border-color: var(--green);
+    }
+
+    /* Modal checkboxes */
+    .cat-checks-modal { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cat-checks-modal .cat-check-label { font-size: 0.85rem; padding: 5px 14px; }
+
     /* Coluna de foto */
     .td-img { width: 70px; }
     .thumb-wrap { position: relative; width: 56px; height: 56px; cursor: pointer; }
@@ -288,11 +306,11 @@
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Categoria</label>
-        <select id="mCategory">
-          <option value="">Carregando...</option>
-        </select>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Categorias</label>
+        <div class="cat-checks-modal" id="mCategoryChecks">
+          <!-- preenchido dinamicamente -->
+        </div>
       </div>
       <div class="form-group">
         <label>Estoque (vazio = sem limite)</label>
@@ -448,11 +466,16 @@ function renderTable(products) {
       <td><input class="editable" value="${escHtml(p.name)}" onblur="saveField(${p.id},'name',this.value)" /></td>
       <td><textarea class="editable" onblur="saveField(${p.id},'description',this.value)">${escHtml(p.description||'')}</textarea></td>
       <td>
-        <select class="editable" data-cat-select onchange="saveField(${p.id},'category',this.value)">
-          ${cats.map(c =>
-            `<option value="${c.slug}"${p.category===c.slug?' selected':''}>${escHtml(c.label)}</option>`
-          ).join('')}
-        </select>
+        <div class="cat-checks" id="catcheck-${p.id}">
+          ${cats.map(c => {
+            const selected = Array.isArray(p.category) ? p.category.includes(c.slug) : p.category === c.slug;
+            return `<label class="cat-check-label">
+              <input type="checkbox" value="${c.slug}" ${selected ? 'checked' : ''}
+                onchange="saveCategoryField(${p.id})" />
+              ${escHtml(c.label)}
+            </label>`;
+          }).join('')}
+        </div>
       </td>
       <td><input class="editable" type="number" value="${p.price||0}" min="0" step="0.01" onblur="saveField(${p.id},'price',parseFloat(this.value)||0)" style="width:80px" /></td>
       <td><input class="editable" value="${escHtml(p.unit||'')}" onblur="saveField(${p.id},'unit',this.value)" style="width:80px" /></td>
@@ -481,6 +504,14 @@ async function saveField(id, field, value) {
   } finally {
     if (row) row.classList.remove('row-saving');
   }
+}
+
+// Lê todos os checkboxes de categoria de uma linha e salva
+async function saveCategoryField(id) {
+  const container = document.getElementById(`catcheck-${id}`);
+  if (!container) return;
+  const selected = [...container.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
+  await saveField(id, 'category', selected);
 }
 
 // ===== FOTO NA TABELA =====
@@ -529,9 +560,13 @@ function openNewModal() {
   document.getElementById('mDesc').value = '';
   document.getElementById('mPrice').value = '';
   document.getElementById('mUnit').value = '/diária';
-  // Popula select de categorias
-  const sel = document.getElementById('mCategory');
-  sel.innerHTML = cats.map(c => `<option value="${c.slug}">${escHtml(c.label)}</option>`).join('');
+  // Popula checkboxes de categorias
+  document.getElementById('mCategoryChecks').innerHTML = cats.map(c =>
+    `<label class="cat-check-label">
+      <input type="checkbox" value="${c.slug}" />
+      ${escHtml(c.label)}
+    </label>`
+  ).join('');
   document.getElementById('mStock').value = '';
   document.getElementById('mEmoji').value = '📦';
   document.getElementById('mImage').value = '';
@@ -570,11 +605,12 @@ async function saveModal() {
   }
 
   const stockVal = document.getElementById('mStock').value;
+  const selectedCats = [...document.querySelectorAll('#mCategoryChecks input:checked')].map(cb => cb.value);
   try {
     await sbInsert({
       name,
       description: document.getElementById('mDesc').value.trim(),
-      category:    document.getElementById('mCategory').value,
+      category:    selectedCats,
       price:       parseFloat(document.getElementById('mPrice').value) || 0,
       unit:        document.getElementById('mUnit').value.trim() || '/diária',
       emoji:       document.getElementById('mEmoji').value.trim() || '📦',
@@ -723,18 +759,12 @@ document.getElementById('catModalOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('catModalOverlay')) closeCatModal();
 });
 
-// Recarrega o <select> de categorias na tabela de produtos
+// Recarrega checkboxes de categoria nas linhas já renderizadas
 async function reloadCatSelect() {
   try {
     cats = await sbFetch('categorias?select=*&order=ordem.asc,id.asc') || [];
   } catch(e) { return; }
-  // Atualiza todos os selects de categoria já na tabela
-  document.querySelectorAll('[data-cat-select]').forEach(sel => {
-    const current = sel.value;
-    sel.innerHTML = cats.map(c =>
-      `<option value="${c.slug}"${c.slug===current?' selected':''}>${escHtml(c.label)}</option>`
-    ).join('');
-  });
+  // Não precisa reatualizar as linhas — loadTable() já faz isso quando necessário
 }
 
 // ===== INIT =====

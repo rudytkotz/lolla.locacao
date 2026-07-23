@@ -316,6 +316,12 @@ nav { display: flex; align-items: center; gap: 8px; }
   gap: 8px;
 }
 
+.product-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .product-tag {
   font-size: 0.7rem;
   font-weight: 500;
