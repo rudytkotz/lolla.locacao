@@ -124,9 +124,19 @@ function renderProducts(products, categorias) {
       ? `<div class="product-img"><img src="${p.image}" alt="${p.name}" /></div>`
       : `<div class="product-img emoji">${p.emoji || '📦'}</div>`;
 
-    // category é array; garante compatibilidade caso ainda seja string
-    const cats = Array.isArray(p.category) ? p.category : (p.category ? [p.category] : []);
-    const labelsHtml = cats.map(s => `<span class="product-tag">${catMap[s] || s}</span>`).join(' ');
+    // category pode vir como array JS, string "{slug}" (formato pg) ou string simples
+    let cats = [];
+    if (Array.isArray(p.category)) {
+      cats = p.category;
+    } else if (typeof p.category === 'string') {
+      // Formato PostgreSQL: "{mesas,paineis}" → ['mesas','paineis']
+      const pg = p.category.match(/^\{(.*)\}$/);
+      if (pg) cats = pg[1].split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+      else if (p.category) cats = [p.category];
+    }
+    const labelsHtml = cats.length
+      ? cats.map(s => `<span class="product-tag">${catMap[s] || s}</span>`).join(' ')
+      : '';
 
     const unitEscaped = (p.unit || '').replace(/'/g, "\\'");
     const nameEscaped = (p.name || '').replace(/'/g, "\\'");
@@ -351,7 +361,10 @@ function applyFilters() {
   }
 
   cards.forEach(card => {
-    const cats   = JSON.parse(card.dataset.categories || '[]');
+    let cats = [];
+    try { cats = JSON.parse(card.dataset.categories || '[]'); } catch(e) {}
+    // Proteção extra para formato pg string
+    if (!Array.isArray(cats)) cats = cats ? [cats] : [];
     const search = card.dataset.search || '';
     const matchFilter = !validSlugs || cats.some(s => validSlugs.has(s));
     const matchSearch = !query || search.includes(query);

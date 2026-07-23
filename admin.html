@@ -484,7 +484,14 @@ function renderTable(products) {
       <td>
         <div class="cat-checks" id="catcheck-${p.id}">
           ${cats.map(c => {
-            const selected = Array.isArray(p.category) ? p.category.includes(c.slug) : p.category === c.slug;
+            let pCats = [];
+            if (Array.isArray(p.category)) pCats = p.category;
+            else if (typeof p.category === 'string') {
+              const pg = p.category.match(/^\{(.*)\}$/);
+              if (pg) pCats = pg[1].split(',').map(s => s.trim().replace(/^"|"$/g,'')).filter(Boolean);
+              else if (p.category) pCats = [p.category];
+            }
+            const selected = pCats.includes(c.slug);
             return `<label class="cat-check-label">
               <input type="checkbox" value="${c.slug}" ${selected ? 'checked' : ''}
                 onchange="saveCategoryField(${p.id})" />
