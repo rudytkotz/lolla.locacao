@@ -707,9 +707,14 @@ function renderCatsTable(list) {
   tbody.innerHTML = rows.map(c => `
     <tr id="catrow-${c.id}" style="${!c._isRoot ? 'background:#faf8f4' : ''}">
       <td>
-        ${!c._isRoot ? '<span style="color:var(--text-light);margin-right:6px">↳</span>' : ''}
-        <input class="editable" value="${escHtml(c.label)}" onblur="saveCatField(${c.id},'label',this.value)"
-          style="${!c._isRoot ? 'padding-left:4px' : ''}" />
+        <div style="display:flex;align-items:center;gap:6px">
+          ${!c._isRoot ? '<span style="color:var(--text-light);font-size:0.9rem">↳</span>' : ''}
+          <input class="editable" value="${escHtml(c.label)}" onblur="saveCatField(${c.id},'label',this.value)"
+            style="flex:1" />
+          ${c._isRoot ? `<button class="btn btn-sm" title="Adicionar subcategoria"
+            style="background:var(--green);color:white;border-radius:50%;width:24px;height:24px;padding:0;font-size:1rem;line-height:1;flex-shrink:0"
+            onclick="openCatModalWithParent('${escHtml(c.slug)}')">+</button>` : ''}
+        </div>
       </td>
       <td><code style="font-size:0.85rem;color:var(--green-dark)">${escHtml(c.slug)}</code></td>
       <td>
@@ -754,8 +759,12 @@ async function deleteCat(id, slug) {
 let editingCatId = null;
 
 function openCatModal() {
+  openCatModalWithParent('');
+}
+
+function openCatModalWithParent(parentSlug) {
   editingCatId = null;
-  document.getElementById('catModalTitle').textContent = 'Nova Categoria';
+  document.getElementById('catModalTitle').textContent = parentSlug ? 'Nova Subcategoria' : 'Nova Categoria';
   document.getElementById('cLabel').value = '';
   document.getElementById('cSlug').value = '';
   document.getElementById('cOrdem').value = cats.length + 1;
@@ -763,7 +772,7 @@ function openCatModal() {
   const roots = cats.filter(c => !c.parent_slug);
   document.getElementById('cParent').innerHTML =
     `<option value="">— nenhuma (categoria principal) —</option>` +
-    roots.map(r => `<option value="${r.slug}">${escHtml(r.label)}</option>`).join('');
+    roots.map(r => `<option value="${r.slug}"${r.slug === parentSlug ? ' selected' : ''}>${escHtml(r.label)}</option>`).join('');
   document.getElementById('catModalOverlay').classList.add('open');
   document.getElementById('cLabel').focus();
 }
