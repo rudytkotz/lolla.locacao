@@ -362,8 +362,6 @@ function closeMobileMenu() {
 }
 
 // ===== BUSCA =====
-let activeFilter = 'todos';
-
 function applyFilters() {
   const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
   const cards = document.querySelectorAll('.product-card');
