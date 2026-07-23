@@ -71,13 +71,13 @@ let activeSubFilter = null;    // slug da subcategoria ativa (null = todas)
 let allCategorias   = [];      // cache de todas as categorias
 
 function renderFilterBar(categorias) {
-  allCategorias = categorias;
+  allCategorias = Array.isArray(categorias) ? categorias : [];
   const bar = document.querySelector('.filter-bar');
   const subBar = document.querySelector('.subfilter-bar');
   if (!bar || !subBar) return;
 
   // Só categorias raiz (sem pai)
-  const roots = categorias.filter(c => !c.parent_slug);
+  const roots = allCategorias.filter(c => !c.parent_slug && c.slug);
 
   bar.innerHTML = `<button class="filter-btn active" data-filter="todos">Todos</button>` +
     roots.map(c =>
