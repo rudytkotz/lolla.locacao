@@ -70,7 +70,7 @@ Documento de referência com todos os serviços utilizados no projeto.
 
 | Serviço    | Usuário / Login         | Onde alterar                          |
 |------------|-------------------------|---------------------------------------|
-| Admin site | Senha: `lolla2025`      | Arquivo `admin.html`, linha `ADMIN_PASSWORD` |
+| Admin site | Senha: `*********`      | Arquivo `admin.html`, linha `ADMIN_PASSWORD` |
 | GitHub     | rudytkotz               | https://github.com/settings           |
 | Netlify    | (login com GitHub)      | https://app.netlify.com               |
 | Supabase   | Email de cadastro       | https://supabase.com/dashboard        |
